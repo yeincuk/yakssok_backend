@@ -1,10 +1,8 @@
 from fastapi import APIRouter, File, UploadFile, Form
-import httpx
-import os
+from services.identify_service import IdentifyService
 
 router = APIRouter()
-
-COLAB_URL = os.getenv("COLAB_IDENTIFY_URL", "http://211.105.65.14:8080")
+service = IdentifyService()
 
 @router.post("/identify")
 async def identify_pill(
@@ -12,10 +10,4 @@ async def identify_pill(
     question: str = Form(default="이 약이 무엇인지 설명해줘")
 ):
     image_bytes = await image.read()
-    async with httpx.AsyncClient(timeout=120) as client:
-        response = await client.post(
-            f"{COLAB_URL}/identify",
-            files={"image": (image.filename, image_bytes, image.content_type)},
-            data={"question": question},
-        )
-        return response.json()
+    return await service.identify_pill(image_bytes, image.filename, image.content_type, question)
